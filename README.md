@@ -1,4 +1,4 @@
-# hotreload
+# Hotreload
 
 A production-grade CLI tool that watches a project directory for file changes, automatically rebuilds the project, and restarts the server — handling real-world editor quirks, process cleanup, and crash loops.
 
