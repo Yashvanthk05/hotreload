@@ -20,7 +20,6 @@ import (
 )
 
 func main() {
-	// Flag parsing
 	root := flag.String("root", "", "Directory to watch for file changes (required)")
 	buildCmd := flag.String("build", "", "Build command (required)")
 	execCmd := flag.String("exec", "", "Exec command to run the server (required)")
@@ -32,13 +31,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Validate root directory
 	if _, err := os.Stat(*root); err != nil {
 		slog.Error("hotreload: root directory does not exist", "root", *root, "err", err)
 		os.Exit(1)
 	}
 
-	// Logger setup
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})))
@@ -49,11 +46,9 @@ func main() {
 		"exec", *execCmd,
 	)
 
-	// Signal context
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// Wire up components
 	b := builder.New(*buildCmd)
 	r := runner.New(*execCmd)
 	d := debounce.New(300 * time.Millisecond)
@@ -64,26 +59,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Start watcher goroutine
 	go w.Run(ctx)
 
-	// Function to run a full build+restart cycle
 	rebuild := func() {
 		slog.Info("hotreload: triggering rebuild")
 		if err := b.Build(ctx); err != nil {
 			if ctx.Err() != nil {
-				return // We are shutting down
+				return
 			}
 			slog.Error("hotreload: build failed, server not restarted", "err", err)
 			return
 		}
 
-		// Stop previous server (if any)
 		if err := r.Stop(); err != nil {
 			slog.Warn("hotreload: error stopping previous server", "err", err)
 		}
 
-		// Start new server
 		if err := r.Start(ctx); err != nil {
 			if ctx.Err() != nil {
 				return
@@ -123,14 +114,9 @@ func main() {
 			if !ok {
 				continue
 			}
-			// Debounce fired — run rebuild in a goroutine so we don't block
-			// the event loop (important: only one rebuild should be in flight
-			// because Builder.build cancels the previous one)
 			go rebuild()
 		}
 	}
 }
 
-// Ensure fsnotify is used (it's used indirectly via the watcher package,
-// but this import satisfies the go.mod requirement).
 var _ = fsnotify.Op(0)
