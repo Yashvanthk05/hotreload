@@ -90,12 +90,12 @@ hotreload \
 
 ```mermaid
 graph TD
-    Main["main.go\nFlag parsing · Signal handling · Event loop"]
-    W["watcher.Watcher\nRecursive fsnotify · Dynamic dir tracking"]
-    F["filter.ShouldIgnore\n.git · node_modules · swap files"]
-    D["debounce.Debouncer\nTrailing-edge 300 ms"]
-    B["builder.Builder\nCancellable build · slog streaming"]
-    R["runner.Runner\nProcess group kill · Crash back-off"]
+    Main["main.go<br/>Flag parsing · Signal handling · Event loop"]
+    W["watcher.Watcher<br/>Recursive fsnotify · Dynamic dir tracking"]
+    F["filter.ShouldIgnore<br/>.git · node_modules · swap files"]
+    D["debounce.Debouncer<br/>Trailing-edge 300 ms"]
+    B["builder.Builder<br/>Cancellable build · slog streaming"]
+    R["runner.Runner<br/>Process group kill · Crash back-off"]
 
     Main --> W
     Main --> D
@@ -111,10 +111,10 @@ graph TD
 
 ```mermaid
 flowchart TD
-    A(["startup"]) --> B["Trigger initial build\n(no file change needed)"]
+    A(["startup"]) --> B["Trigger initial build<br/>(no file change needed)"]
     B --> BC["builder.Build"]
 
-    A --> WL["watcher goroutine\nlistening for events"]
+    A --> WL["watcher goroutine<br/>listening for events"]
     WL --> EV["file event received"]
     EV --> FI{"filter.ShouldIgnore?"}
     FI -->|yes| DROP(["drop event"])
@@ -126,8 +126,8 @@ flowchart TD
 
     BC --> BRES{"build result"}
     BRES -->|"failed"| LOG(["log error, keep old server running"])
-    BRES -->|"success"| STOP["runner.Stop()\nSIGTERM → SIGKILL process group"]
-    STOP --> START["runner.Start()\nnew process group + real-time logs"]
+    BRES -->|"success"| STOP["runner.Stop()<br/>SIGTERM → SIGKILL process group"]
+    STOP --> START["runner.Start()<br/>new process group + real-time logs"]
     START --> WL
 ```
 
