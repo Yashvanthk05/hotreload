@@ -13,12 +13,12 @@ hotreload --root ./myproject --build "go build -o ./bin/server ./cmd/server" --e
 | Feature | Details |
 |---|---|
 | **File watching** | Recursive `fsnotify`-based watcher with dynamic directory tracking |
-| **Debouncing** | Trailing-edge 300 ms debounce — no duplicate rebuilds from editor temp files |
+| **Debouncing** | Trailing-edge 300 ms debounce - no duplicate rebuilds from editor temp files |
 | **Cancel in-flight builds** | New change while building? Previous build is cancelled immediately |
 | **Process tree killing** | Uses `SIGKILL` on the entire process group (`Setpgid`), not just the parent PID |
 | **Graceful stop** | `SIGTERM` first, escalates to `SIGKILL` after 2 s |
 | **Crash loop protection** | Exponential back-off (500 ms to 30 s cap) if server exits within 1 s of start |
-| **Real-time logs** | stdout/stderr piped directly — zero buffering |
+| **Real-time logs** | stdout/stderr piped directly - zero buffering |
 | **Smart filtering** | Ignores `.git/`, `node_modules/`, `vendor/`, swap files, temp files |
 | **Dynamic dirs** | New subdirectories created at runtime are added to watch list automatically |
 | **OS limit awareness** | Logs a warning if > 500 directories are watched; documents `ulimit -n` fix |
@@ -53,7 +53,7 @@ curl http://localhost:8080
 # Testserver | PID: 12345 | Version: v1.0.0 | ...
 ```
 
-Now edit `testserver/main.go` — change the `version` string — and save. Within ~2 seconds you'll see the server restart and `curl` will return the updated version.
+Now edit `testserver/main.go` - change the `version` string - and save. Within ~2 seconds you'll see the server restart and `curl` will return the updated version.
 
 ---
 
@@ -134,7 +134,7 @@ flowchart TD
 ### Key Design Decisions
 
 **Why process groups?**  
-`cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}` puts the server and all its children in a new process group. `syscall.Kill(-pgid, syscall.SIGKILL)` then kills every process in the group — no zombies, no lingering port leases.
+`cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}` puts the server and all its children in a new process group. `syscall.Kill(-pgid, syscall.SIGKILL)` then kills every process in the group - no zombies, no lingering port leases.
 
 **Why trailing-edge debounce?**  
 Editors like Vim and JetBrains trigger 3–5 file events per save (write temp, rename, chmod). If we rebuilt on the first event, we'd rebuild against a partially-written file. Trailing-edge debounce waits for the flurry to settle.
