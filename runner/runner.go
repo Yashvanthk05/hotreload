@@ -26,7 +26,6 @@ const (
 	initialBackoff = 500 * time.Millisecond
 )
 
-// Runner manages the lifecycle of the server process.
 type Runner struct {
 	cmdStr     string
 	mu         sync.Mutex
@@ -36,13 +35,10 @@ type Runner struct {
 	lastStart  time.Time
 }
 
-// New creates a new Runner with the given exec command string.
 func New(cmdStr string) *Runner {
 	return &Runner{cmdStr: cmdStr}
 }
 
-// Stop terminates the current server process and its entire process group.
-// It is safe to call Stop even if the server is not running.
 func (r *Runner) Stop() error {
 	r.mu.Lock()
 	proc := r.proc
@@ -57,17 +53,15 @@ func (r *Runner) Stop() error {
 
 	slog.Info("runner: stopping server", "pid", proc.Pid)
 
-	// First try graceful shutdown with SIGTERM to the process group
 	if pgid > 0 {
 		_ = syscall.Kill(-pgid, syscall.SIGTERM)
 	} else {
 		_ = proc.Signal(syscall.SIGTERM)
 	}
 
-	// Give it a short window to exit gracefully
 	done := make(chan struct{})
 	go func() {
-		proc.Wait() //nolint:errcheck
+		proc.Wait()
 		close(done)
 	}()
 
@@ -75,14 +69,13 @@ func (r *Runner) Stop() error {
 	case <-done:
 		slog.Info("runner: server stopped gracefully", "pid", proc.Pid)
 	case <-time.After(2 * time.Second):
-		// Force kill the entire process group
 		slog.Warn("runner: server did not stop gracefully, force killing process group", "pgid", pgid)
 		if pgid > 0 {
 			if err := syscall.Kill(-pgid, syscall.SIGKILL); err != nil {
 				slog.Error("runner: failed to SIGKILL process group", "pgid", pgid, "err", err)
 			}
 		} else {
-			proc.Kill() //nolint:errcheck
+			proc.Kill()
 		}
 		<-done
 		slog.Info("runner: server force-killed", "pid", proc.Pid)
@@ -91,19 +84,12 @@ func (r *Runner) Stop() error {
 	return nil
 }
 
-// Start launches the server process. If a crash loop is detected (process
-// exits within crashThreshold), it applies exponential back-off before
-// returning an error. The caller should retry after a delay.
-//
-// The server's stdout and stderr are piped directly to os.Stdout/os.Stderr
-// for real-time log streaming.
 func (r *Runner) Start(ctx context.Context) error {
 	args := parseCommand(r.cmdStr)
 	if len(args) == 0 {
 		return fmt.Errorf("runner: empty exec command")
 	}
 
-	// Apply crash loop back-off if needed
 	r.mu.Lock()
 	backoffDelay := r.backoffDelay()
 	r.mu.Unlock()
@@ -120,10 +106,8 @@ func (r *Runner) Start(ctx context.Context) error {
 
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 
-	// Put the process in its own process group so we can kill all children
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	// Stream logs in real time — no buffering
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -132,7 +116,6 @@ func (r *Runner) Start(ctx context.Context) error {
 	}
 
 	pid := cmd.Process.Pid
-	// Get the process group ID (on Linux with Setpgid=true, pgid == pid)
 	pgid := pid
 
 	r.mu.Lock()
@@ -149,7 +132,7 @@ func (r *Runner) Start(ctx context.Context) error {
 		uptime := time.Since(r.lastStart)
 
 		r.mu.Lock()
-		// Check if this is still our process (not already replaced)
+		
 		isCurrent := r.proc == cmd.Process
 		if isCurrent {
 			r.proc = nil
@@ -180,13 +163,11 @@ func (r *Runner) Start(ctx context.Context) error {
 	return nil
 }
 
-// backoffDelay returns how long to wait before starting after a crash.
-// Must be called with r.mu held.
 func (r *Runner) backoffDelay() time.Duration {
 	if r.crashCount == 0 {
 		return 0
 	}
-	// Exponential back-off: 500ms, 1s, 2s, 4s, 8s, ... capped at 30s
+	
 	delay := initialBackoff
 	for i := 1; i < r.crashCount; i++ {
 		delay *= 2
@@ -198,8 +179,6 @@ func (r *Runner) backoffDelay() time.Duration {
 	return delay
 }
 
-// parseCommand splits a command string into args using simple space-splitting,
-// respecting single and double quotes.
 func parseCommand(cmd string) []string {
 	var args []string
 	var current strings.Builder
