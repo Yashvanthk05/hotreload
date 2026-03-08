@@ -1,6 +1,6 @@
 <img src="./assets/hotreload_banner.png">
 
-A production-grade CLI tool that watches a project directory for file changes, automatically rebuilds the project, and restarts the server — handling real-world editor quirks, process cleanup, and crash loops.
+A production-grade CLI tool that watches a project directory for file changes, automatically rebuilds the project, and restarts the server - handling real-world editor quirks, process cleanup, and crash loops.
 
 ```
 hotreload --root ./myproject --build "go build -o ./bin/server ./cmd/server" --exec "./bin/server"
