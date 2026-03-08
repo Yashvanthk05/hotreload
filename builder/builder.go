@@ -1,5 +1,3 @@
-// Package builder runs the user-supplied build command and supports
-// cancellation of in-flight builds when a new file change arrives.
 package builder
 
 import (
