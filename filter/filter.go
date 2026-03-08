@@ -15,6 +15,7 @@ var ignoredDirs = []string{
 	".vscode",
 	".hg",
 	".svn",
+	"bin",
 }
 
 // ignoredExts are file extensions that should be ignored.
