@@ -13,17 +13,12 @@ import (
 
 const maxWatchDirs = 500
 
-// Watcher recursively watches a root directory and all subdirectories.
-// It dynamically adds new directories as they are created, and logs
-// when directories are removed.
 type Watcher struct {
 	root    string
 	fsw     *fsnotify.Watcher
 	eventCh chan fsnotify.Event
 }
 
-// New creates a new Watcher for the given root directory.
-// It walks all subdirectories (excluding ignored paths) and begins watching them.
 func New(root string) (*Watcher, error) {
 	fsw, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -44,21 +39,18 @@ func New(root string) (*Watcher, error) {
 	return w, nil
 }
 
-// addDirRecursive walks the given directory tree and adds all non-ignored
-// directories to the fsnotify watcher.
 func (w *Watcher) addDirRecursive(root string) error {
 	dirCount := 0
 	return filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			slog.Warn("watcher: walk error", "path", path, "err", err)
-			return nil // Continue walking
+			return nil
 		}
 
 		if !d.IsDir() {
 			return nil
 		}
 
-		// Skip ignored directories
 		if filter.IsIgnoredDir(path) {
 			slog.Debug("watcher: skipping ignored dir", "path", path)
 			return filepath.SkipDir
@@ -80,8 +72,6 @@ func (w *Watcher) addDirRecursive(root string) error {
 	})
 }
 
-// Run starts the watcher event loop, forwarding relevant file events to
-// the channel returned by Events(). It blocks until ctx is cancelled.
 func (w *Watcher) Run(ctx context.Context) {
 	defer w.fsw.Close()
 	defer close(w.eventCh)
@@ -107,11 +97,9 @@ func (w *Watcher) Run(ctx context.Context) {
 	}
 }
 
-// handleEvent processes a single fsnotify event.
 func (w *Watcher) handleEvent(event fsnotify.Event) {
 	path := event.Name
 
-	// If a new directory was created, start watching it
 	if event.Has(fsnotify.Create) {
 		info, err := os.Stat(path)
 		if err == nil && info.IsDir() {
@@ -121,12 +109,10 @@ func (w *Watcher) handleEvent(event fsnotify.Event) {
 					slog.Warn("watcher: failed to add new dir", "path", path, "err", err)
 				}
 			}
-			// Don't forward directory creation events as file events
 			return
 		}
 	}
 
-	// If a directory was removed, log it (fsnotify auto-removes it)
 	if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
 		info, err := os.Stat(path)
 		if err != nil || (err == nil && info.IsDir()) {
@@ -134,7 +120,6 @@ func (w *Watcher) handleEvent(event fsnotify.Event) {
 		}
 	}
 
-	// Skip files that should be ignored
 	if filter.ShouldIgnore(path) {
 		slog.Debug("watcher: ignoring file event", "path", path, "op", event.Op)
 		return
@@ -142,7 +127,6 @@ func (w *Watcher) handleEvent(event fsnotify.Event) {
 
 	slog.Debug("watcher: file event", "path", path, "op", event.Op)
 
-	// Forward to event channel (non-blocking: drop if consumer is slow)
 	select {
 	case w.eventCh <- event:
 	default:
@@ -150,7 +134,6 @@ func (w *Watcher) handleEvent(event fsnotify.Event) {
 	}
 }
 
-// Events returns the channel of file events that passed filtering.
 func (w *Watcher) Events() <-chan fsnotify.Event {
 	return w.eventCh
 }
