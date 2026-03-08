@@ -1,4 +1,3 @@
-// Package filter decides whether a file change should trigger a rebuild.
 package filter
 
 import (
