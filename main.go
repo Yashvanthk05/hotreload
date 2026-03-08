@@ -1,9 +1,3 @@
-// hotreload is a CLI tool that watches a project directory for file changes
-// and automatically rebuilds and restarts a server process.
-//
-// Usage:
-//
-//	hotreload --root ./myproject --build "go build -o ./bin/server ./cmd/server" --exec "./bin/server"
 package main
 
 import (
