@@ -1,5 +1,3 @@
-// Package debounce provides a trailing-edge debouncer for collapsing
-// rapid file system events into a single rebuild trigger.
 package debounce
 
 import (
