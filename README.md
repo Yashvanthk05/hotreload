@@ -1,4 +1,4 @@
-# Hotreload
+<img src="./assets/hotreload_banner.png">
 
 A production-grade CLI tool that watches a project directory for file changes, automatically rebuilds the project, and restarts the server — handling real-world editor quirks, process cleanup, and crash loops.
 
@@ -17,7 +17,7 @@ hotreload --root ./myproject --build "go build -o ./bin/server ./cmd/server" --e
 | **Cancel in-flight builds** | New change while building? Previous build is cancelled immediately |
 | **Process tree killing** | Uses `SIGKILL` on the entire process group (`Setpgid`), not just the parent PID |
 | **Graceful stop** | `SIGTERM` first, escalates to `SIGKILL` after 2 s |
-| **Crash loop protection** | Exponential back-off (500 ms → 30 s cap) if server exits within 1 s of start |
+| **Crash loop protection** | Exponential back-off (500 ms to 30 s cap) if server exits within 1 s of start |
 | **Real-time logs** | stdout/stderr piped directly — zero buffering |
 | **Smart filtering** | Ignores `.git/`, `node_modules/`, `vendor/`, swap files, temp files |
 | **Dynamic dirs** | New subdirectories created at runtime are added to watch list automatically |
@@ -50,7 +50,7 @@ Then in another terminal:
 
 ```bash
 curl http://localhost:8080
-# Hello from testserver! PID: 12345 | Version: v1.0.0 | ...
+# Testserver | PID: 12345 | Version: v1.0.0 | ...
 ```
 
 Now edit `testserver/main.go` — change the `version` string — and save. Within ~2 seconds you'll see the server restart and `curl` will return the updated version.
