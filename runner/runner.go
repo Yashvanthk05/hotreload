@@ -1,6 +1,3 @@
-// Package runner starts and stops the server process, killing the entire
-// process group to ensure no orphan children remain. It also implements
-// crash loop protection with exponential back-off.
 package runner
 
 import (
