@@ -1,6 +1,3 @@
-// Package watcher provides recursive directory watching using fsnotify.
-// It handles dynamic addition of newly created directories and gracefully
-// ignores removed directories.
 package watcher
 
 import (

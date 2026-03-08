@@ -81,7 +81,7 @@ func TestWatcher_NewSubdirIsWatched(t *testing.T) {
 
 	select {
 	case <-w.Events():
-		// Good — we received an event from the new subdirectory
+		// we received an event from the new subdirectory
 	case <-ctx.Done():
 		t.Fatal("timed out — new subdirectory was not watched")
 	}
