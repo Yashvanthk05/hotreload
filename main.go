@@ -26,7 +26,7 @@ import (
 )
 
 func main() {
-	// ── Flag parsing ──────────────────────────────────────────────────────────
+	// Flag parsing
 	root := flag.String("root", "", "Directory to watch for file changes (required)")
 	buildCmd := flag.String("build", "", "Build command (required)")
 	execCmd := flag.String("exec", "", "Exec command to run the server (required)")
@@ -44,7 +44,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// ── Logger setup ─────────────────────────────────────────────────────────
+	// Logger setup
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})))
@@ -55,11 +55,11 @@ func main() {
 		"exec", *execCmd,
 	)
 
-	// ── Signal context ───────────────────────────────────────────────────────
+	// Signal context
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// ── Wire up components ───────────────────────────────────────────────────
+	// Wire up components
 	b := builder.New(*buildCmd)
 	r := runner.New(*execCmd)
 	d := debounce.New(300 * time.Millisecond)
@@ -70,10 +70,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// ── Start watcher goroutine ───────────────────────────────────────────────
+	// Start watcher goroutine
 	go w.Run(ctx)
 
-	// ── Function to run a full build+restart cycle ────────────────────────────
+	// Function to run a full build+restart cycle
 	rebuild := func() {
 		slog.Info("hotreload: triggering rebuild")
 		if err := b.Build(ctx); err != nil {
@@ -98,10 +98,8 @@ func main() {
 		}
 	}
 
-	// ── Trigger initial build immediately (don't wait for a file change) ──────
 	go rebuild()
 
-	// ── Main event loop ───────────────────────────────────────────────────────
 	slog.Info("hotreload: watching for changes", "root", *root)
 	for {
 		select {
@@ -111,7 +109,7 @@ func main() {
 			if err := r.Stop(); err != nil {
 				slog.Warn("hotreload: error stopping server during shutdown", "err", err)
 			}
-			slog.Info("hotreload: goodbye")
+			slog.Info("hotreload: stopped")
 			return
 
 		case event, ok := <-w.Events():
@@ -133,7 +131,7 @@ func main() {
 			}
 			// Debounce fired — run rebuild in a goroutine so we don't block
 			// the event loop (important: only one rebuild should be in flight
-			// because Builder.Build cancels the previous one)
+			// because Builder.build cancels the previous one)
 			go rebuild()
 		}
 	}
