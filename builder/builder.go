@@ -10,26 +10,18 @@ import (
 )
 
 // Builder manages build command execution with cancellation support.
-// If a new build is requested while one is running, the running build
-// is cancelled first so we always build from the latest state.
 type Builder struct {
 	cmd    string
 	mu     sync.Mutex
 	cancel context.CancelFunc
-	gen    uint64 // generation counter; incremented on each new build request
+	gen    uint64 // incremented on each new build request
 }
 
-// New creates a new Builder with the given build command string.
 func New(cmd string) *Builder {
 	return &Builder{cmd: cmd}
 }
 
-// Build executes the build command. If a previous build is still running,
-// it is cancelled before starting the new one.
-//
-// Returns nil on success, or an error if the build failed or context was cancelled.
 func (b *Builder) Build(ctx context.Context) error {
-	// Cancel any previous in-flight build and capture our generation ID
 	b.mu.Lock()
 	if b.cancel != nil {
 		b.cancel()
@@ -42,7 +34,7 @@ func (b *Builder) Build(ctx context.Context) error {
 
 	defer func() {
 		b.mu.Lock()
-		// Only clear the cancel func if it's still ours (same generation)
+		
 		if b.gen == myGen {
 			b.cancel = nil
 		}
@@ -60,7 +52,6 @@ func (b *Builder) Build(ctx context.Context) error {
 
 	cmd := exec.CommandContext(buildCtx, args[0], args[1:]...)
 
-	// Stream stdout and stderr in real time using slog-wrapped writers
 	cmd.Stdout = &slogWriter{level: slog.LevelInfo, prefix: "build"}
 	cmd.Stderr = &slogWriter{level: slog.LevelError, prefix: "build"}
 
@@ -77,9 +68,6 @@ func (b *Builder) Build(ctx context.Context) error {
 	return nil
 }
 
-// parseCommand splits a command string into args, respecting quoted segments.
-// This is a simple implementation that handles most common cases.
-// For commands with quoted paths containing spaces, the quotes are stripped.
 func parseCommand(cmd string) []string {
 	var args []string
 	var current strings.Builder
@@ -109,7 +97,6 @@ func parseCommand(cmd string) []string {
 	return args
 }
 
-// slogWriter is an io.Writer that forwards lines to slog.
 type slogWriter struct {
 	level  slog.Level
 	prefix string
@@ -119,7 +106,6 @@ type slogWriter struct {
 func (w *slogWriter) Write(p []byte) (n int, err error) {
 	w.buf.Write(p)
 	s := w.buf.String()
-	// Flush complete lines
 	for {
 		idx := strings.IndexByte(s, '\n')
 		if idx < 0 {
